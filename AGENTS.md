@@ -24,6 +24,22 @@ own top-level directory and is intended to be runnable directly (open the
   needs one.
 - Keep dependencies to zero where possible; otherwise load from a CDN.
 
+## Allowed commands
+
+Agents may run the following commands without asking for confirmation:
+
+- `git status`
+- `git add`
+- `git commit`
+- `git log`
+- `git diff`
+- `cat`
+- `ls`
+
+Any other command — especially anything that writes outside the repo, pushes
+to a remote, deletes files, or installs software — should be confirmed with
+the user first.
+
 ## When adding a new utility
 
 1. Create a new top-level directory with a descriptive snake_case name.
