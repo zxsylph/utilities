@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Docs → Clean HTML for Strapi CKEditor</title>
-  <meta name="description" content="Paste content from Google Docs and get clean HTML ready for Strapi CKEditor.">
+  <title>Google Docs / Word → Clean HTML for Strapi CKEditor</title>
+  <meta name="description" content="Paste content from Google Docs or Microsoft Word and get clean HTML ready for Strapi CKEditor.">
   <style>
     :root {
       --bg: #f8f9fa;
@@ -225,14 +225,14 @@
 <body>
   <div class="container">
     <header>
-      <h1>Google Docs → Clean HTML</h1>
-      <p class="subtitle">Paste from Google Docs, get clean HTML ready for Strapi CKEditor — no source mode needed.</p>
+      <h1>Google Docs / Word → Clean HTML</h1>
+      <p class="subtitle">Paste from Google Docs or Microsoft Word, get clean HTML ready for Strapi CKEditor — no source mode needed.</p>
     </header>
 
     <div class="card">
       <div class="step">
         <div class="num">1</div>
-        <div class="label">Paste from Google Docs below (Ctrl+V or Cmd+V) — content auto-cleans on paste</div>
+        <div class="label">Paste from Google Docs or Word below (Ctrl+V or Cmd+V) — content auto-cleans on paste</div>
       </div>
       <div id="preview" class="preview" contenteditable="true"></div>
 
@@ -292,6 +292,44 @@
       const parser = new DOMParser();
       const doc = parser.parseFromString('<!DOCTYPE html><html><body>' + rawHtml + '</body></html>', 'text/html');
       const body = doc.body;
+
+      // 0a. Strip ALL comment nodes — kills MSO conditional comments
+      // (<!--[if gte mso 9]>...<![endif]-->, <!--[if !supportLists]-->,
+      // <!--StartFragment-->, etc.) Word ships its formatting metadata here.
+      const cw = doc.createTreeWalker(body, NodeFilter.SHOW_COMMENT);
+      const comments = [];
+      let cn;
+      while ((cn = cw.nextNode())) comments.push(cn);
+      comments.forEach(c => c.remove());
+
+      // 0b. Strip Word's fake bullet markers ("●&nbsp;&nbsp;&nbsp;") from <p>s
+      // and remember which <p>s were bulleted so we can group them into a <ul>.
+      const BULLET_RE = /^(?:&nbsp;|\s| )*[●○■▪▫·•◦▶►*]+(?:&nbsp;|\s| )+/;
+      const bulletPs = new Set();
+      body.querySelectorAll('p').forEach(p => {
+        const html = p.innerHTML;
+        if (BULLET_RE.test(html)) {
+          p.innerHTML = html.replace(BULLET_RE, '');
+          bulletPs.add(p);
+        }
+      });
+
+      // 0c. Group consecutive bulleted <p> siblings into a real <ul><li>.
+      let ul = null;
+      Array.from(body.children).forEach(child => {
+        if (bulletPs.has(child)) {
+          if (!ul) {
+            ul = doc.createElement('ul');
+            child.parentNode.insertBefore(ul, child);
+          }
+          const li = doc.createElement('li');
+          while (child.firstChild) li.appendChild(child.firstChild);
+          ul.appendChild(li);
+          child.remove();
+        } else {
+          ul = null;
+        }
+      });
 
       // 1. Hard-remove non-content tags
       body.querySelectorAll('style, script, meta, link, head, title, picture, svg, video, audio, iframe, object, embed').forEach(el => el.remove());
