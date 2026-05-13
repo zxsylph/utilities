@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Docs → Clean HTML for Strapi CKEditor</title>
+  <meta name="description" content="Paste content from Google Docs and get clean HTML ready for Strapi CKEditor.">
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --surface-2: #f1f3f5;
+      --border: #dee2e6;
+      --border-strong: #adb5bd;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --text-faint: #adb5bd;
+      --primary: #1a73e8;
+      --primary-hover: #1557b0;
+      --success: #0f9d58;
+      --success-bg: #e6f4ea;
+      --danger: #d93025;
+      --info-bg: #e8f0fe;
+      --info-text: #1967d2;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header {
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 500;
+      margin: 0 0 4px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 0;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--info-bg);
+      color: var(--info-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .label {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      padding-top: 2px;
+    }
+    .preview {
+      min-height: 120px;
+      max-height: 240px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      background: var(--surface);
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .preview:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--info-bg);
+    }
+    .preview:empty:before {
+      content: 'Paste here (Ctrl+V) — content will be cleaned automatically';
+      color: var(--text-faint);
+    }
+    .preview h1, .preview h2, .preview h3, .preview h4 { margin: 8px 0; }
+    .preview ul, .preview ol { margin: 8px 0; padding-left: 24px; }
+    .preview p { margin: 6px 0; }
+    .preview img { max-width: 100%; height: auto; }
+    .preview a { color: var(--primary); }
+    .options {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .options label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    button {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    button:hover {
+      border-color: var(--border-strong);
+      background: var(--surface-2);
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    .output-area {
+      position: relative;
+    }
+    .output {
+      min-height: 120px;
+      max-height: 320px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      background: var(--surface-2);
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: var(--text);
+      margin: 0;
+    }
+    .toast {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--success-bg);
+      color: var(--success);
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      font-weight: 500;
+    }
+    .toast.show { opacity: 1; }
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .stats strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 600px) {
+      body { padding: 16px 12px; }
+      .card { padding: 16px; }
+      h1 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Google Docs → Clean HTML</h1>
+      <p class="subtitle">Paste from Google Docs, get clean HTML ready for Strapi CKEditor — no source mode needed.</p>
+    </header>
+
+    <div class="card">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="label">Paste from Google Docs below (Ctrl+V or Cmd+V) — content auto-cleans on paste</div>
+      </div>
+      <div id="preview" class="preview" contenteditable="true"></div>
+
+      <div class="options">
+        <label><input type="checkbox" id="opt-images" checked> Keep images</label>
+        <label><input type="checkbox" id="opt-strong-in-heading" checked> Remove bold inside headings</label>
+        <label><input type="checkbox" id="opt-decode-url" checked> Decode Google redirect URLs</label>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" onclick="copyRich()">📋 Copy for CKEditor</button>
+        <button onclick="copyText()">⟨/⟩ Copy as HTML text</button>
+        <button onclick="reclean()">↻ Re-clean</button>
+        <button onclick="clearAll()">🗑 Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="step">
+        <div class="num">2</div>
+        <div class="label">Click "Copy for CKEditor" → paste in Strapi (no source mode needed)</div>
+      </div>
+
+      <div class="output-area">
+        <pre class="output" id="output">Clean HTML output will appear here...</pre>
+        <span class="toast" id="toast">Copied!</span>
+      </div>
+      <div class="stats" id="stats" style="display:none;">
+        <div>Tags: <strong id="tagcount">0</strong></div>
+        <div>Images: <strong id="imgcount">0</strong></div>
+        <div>Size: <strong id="size">0</strong></div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Allowed tags: h1–h6, p, a, ul, ol, li, strong, em, br, img &nbsp;·&nbsp; All inline styles &amp; classes are stripped</p>
+    </footer>
+  </div>
+
+  <script>
+    const ALLOWED = new Set(['h1','h2','h3','h4','h5','h6','p','a','ul','ol','li','strong','em','br','img']);
+    const IMG_ALLOWED_ATTRS = new Set(['src', 'alt', 'width', 'height']);
+    let rawHtmlCache = '';
+    let cleanedHtml = '';
+
+    function humanSize(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+      return (n / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function cleanFromHtml(rawHtml) {
+      const keepImages = document.getElementById('opt-images').checked;
+      const stripStrongInHeading = document.getElementById('opt-strong-in-heading').checked;
+      const decodeUrl = document.getElementById('opt-decode-url').checked;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString('<!DOCTYPE html><html><body>' + rawHtml + '</body></html>', 'text/html');
+      const body = doc.body;
+
+      // 1. Hard-remove non-content tags
+      body.querySelectorAll('style, script, meta, link, head, title, picture, svg, video, audio, iframe, object, embed').forEach(el => el.remove());
+
+      if (!keepImages) {
+        body.querySelectorAll('img').forEach(el => el.remove());
+      }
+
+      // 2. Normalize b/i -> strong/em
+      let safety = 0;
+      while (safety++ < 50) {
+        const b = body.querySelector('b, i');
+        if (!b) break;
+        const newTag = b.tagName.toLowerCase() === 'b' ? 'strong' : 'em';
+        const replacement = doc.createElement(newTag);
+        while (b.firstChild) replacement.appendChild(b.firstChild);
+        b.replaceWith(replacement);
+      }
+
+      // 3. Unwrap ALL not-allowed tags - repeat until stable
+      safety = 0;
+      while (safety++ < 200) {
+        let foundDisallowed = null;
+        const all = body.querySelectorAll('*');
+        for (const el of all) {
+          if (!ALLOWED.has(el.tagName.toLowerCase())) {
+            foundDisallowed = el;
+            break;
+          }
+        }
+        if (!foundDisallowed) break;
+        const parent = foundDisallowed.parentNode;
+        while (foundDisallowed.firstChild) parent.insertBefore(foundDisallowed.firstChild, foundDisallowed);
+        parent.removeChild(foundDisallowed);
+      }
+
+      // 4. Strip attributes from ALL remaining elements
+      body.querySelectorAll('*').forEach(el => {
+        const tag = el.tagName.toLowerCase();
+        const attrs = Array.from(el.attributes);
+        for (const attr of attrs) {
+          if (tag === 'a' && attr.name === 'href') continue;
+          if (tag === 'img' && IMG_ALLOWED_ATTRS.has(attr.name)) continue;
+          el.removeAttribute(attr.name);
+        }
+      });
+
+      // 5. Decode Google redirect URLs
+      if (decodeUrl) {
+        body.querySelectorAll('a[href]').forEach(a => {
+          const href = a.getAttribute('href');
+          const m = href.match(/^https?:\/\/www\.google\.com\/url\?q=([^&]+)/);
+          if (m) {
+            try { a.setAttribute('href', decodeURIComponent(m[1])); } catch (e) {}
+          }
+        });
+      }
+
+      // 6. Strip strong/em inside headings
+      if (stripStrongInHeading) {
+        body.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(h => {
+          h.querySelectorAll('strong, em').forEach(el => {
+            const p = el.parentNode;
+            while (el.firstChild) p.insertBefore(el.firstChild, el);
+            p.removeChild(el);
+          });
+        });
+      }
+
+      // 7. Unwrap top-level strong/em wrapping block content
+      safety = 0;
+      while (safety++ < 20) {
+        let didUnwrap = false;
+        body.querySelectorAll('strong, em').forEach(el => {
+          const hasBlock = el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, li');
+          if (hasBlock) {
+            const parent = el.parentNode;
+            while (el.firstChild) parent.insertBefore(el.firstChild, el);
+            parent.removeChild(el);
+            didUnwrap = true;
+          }
+        });
+        if (!didUnwrap) break;
+      }
+
+      // 8. Remove empty tags
+      safety = 0;
+      while (safety++ < 10) {
+        let found = false;
+        body.querySelectorAll('p, strong, em, a, li, ul, ol, h1, h2, h3, h4, h5, h6').forEach(el => {
+          if (!el.textContent.trim() && !el.querySelector('br, img')) {
+            el.remove();
+            found = true;
+          }
+        });
+        if (!found) break;
+      }
+
+      let html = body.innerHTML;
+
+      // 9. Format with newlines between block tags
+      html = html
+        .replace(/<(\/?(h[1-6]|p|ul|ol|li))>/g, '\n<$1>')
+        .replace(/^\n+/, '')
+        .trim();
+
+      return html;
+    }
+
+    function updateOutput(html) {
+      cleanedHtml = html;
+      const out = document.getElementById('output');
+      let display = html || 'Clean HTML output will appear here...';
+      if (display.length > 5000) {
+        display = display.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, (m) => {
+          return m.substring(0, 60) + '... [+' + (m.length - 60) + ' chars truncated]';
+        });
+      }
+      out.textContent = display;
+
+      if (html) {
+        const tagCount = (html.match(/<[^/!][^>]*>/g) || []).length;
+        const imgCount = (html.match(/<img\b/g) || []).length;
+        document.getElementById('tagcount').textContent = tagCount;
+        document.getElementById('imgcount').textContent = imgCount;
+        document.getElementById('size').textContent = humanSize(html.length);
+        document.getElementById('stats').style.display = 'flex';
+      } else {
+        document.getElementById('stats').style.display = 'none';
+      }
+    }
+
+    document.getElementById('preview').addEventListener('paste', (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      const html = cd.getData('text/html');
+      const text = cd.getData('text/plain');
+
+      rawHtmlCache = html || '';
+
+      let cleaned;
+      if (html) {
+        cleaned = cleanFromHtml(html);
+      } else {
+        cleaned = text.split(/\n\n+/).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('\n');
+      }
+
+      document.getElementById('preview').innerHTML = cleaned;
+      updateOutput(cleaned);
+    });
+
+    function reclean() {
+      if (!rawHtmlCache) { showToast('Paste content first'); return; }
+      const cleaned = cleanFromHtml(rawHtmlCache);
+      document.getElementById('preview').innerHTML = cleaned;
+      updateOutput(cleaned);
+      showToast('Re-cleaned');
+    }
+
+    document.getElementById('opt-images').addEventListener('change', reclean);
+    document.getElementById('opt-strong-in-heading').addEventListener('change', reclean);
+    document.getElementById('opt-decode-url').addEventListener('change', reclean);
+
+    async function copyRich() {
+      if (!cleanedHtml) { showToast('Paste content first'); return; }
+      try {
+        const blobHtml = new Blob([cleanedHtml], { type: 'text/html' });
+        const blobText = new Blob([cleanedHtml], { type: 'text/plain' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
+        showToast('✓ Copied! Paste in CKEditor');
+      } catch (err) {
+        // Fallback for older browsers
+        try {
+          await navigator.clipboard.writeText(cleanedHtml);
+          showToast('✓ Copied as text (fallback)');
+        } catch (e2) {
+          showToast('Error: ' + err.message);
+        }
+      }
+    }
+
+    async function copyText() {
+      if (!cleanedHtml) { showToast('Paste content first'); return; }
+      try {
+        await navigator.clipboard.writeText(cleanedHtml);
+        showToast('✓ HTML text copied');
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    }
+
+    function clearAll() {
+      document.getElementById('preview').innerHTML = '';
+      rawHtmlCache = '';
+      updateOutput('');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+  </script>
+</body>
+</html>
