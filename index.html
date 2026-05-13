@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Utilities</title>
+  <meta name="description" content="A collection of small, self-contained web utilities.">
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #dee2e6;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --primary: #1a73e8;
+      --primary-hover: #1557b0;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem 1rem;
+      line-height: 1.5;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 0.25rem;
+      font-size: 1.75rem;
+    }
+    .tagline {
+      color: var(--text-muted);
+      margin: 0 0 2rem;
+    }
+    .tools {
+      display: grid;
+      gap: 1rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .tool {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .tool:hover {
+      border-color: var(--primary);
+    }
+    .tool a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .tool a:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+    .tool p {
+      margin: 0.35rem 0 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    footer {
+      margin-top: 3rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    footer a { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Utilities</h1>
+    <p class="tagline">A collection of small, self-contained web utilities.</p>
+
+    <ul class="tools">
+      <li class="tool">
+        <a href="clean_html/">clean_html</a>
+        <p>Paste content from Google Docs and get clean HTML suitable for Strapi's CKEditor field.</p>
+      </li>
+    </ul>
+
+    <footer>
+      <a href="https://github.com/zxsylph/utilities">View source on GitHub</a>
+    </footer>
+  </main>
+</body>
+</html>
